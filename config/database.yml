@@ -57,7 +57,7 @@ development:
 # Do not set this db to the same as development or production.
 test:
   <<: *default
-  database: ${DB_SCHEMA:}
+  database: <%= ENV['DB_DATABASE'] %>
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is
@@ -81,6 +81,4 @@ test:
 #
 production:
   <<: *default
-  database: zap_shipping_service_production
-  username: zap_shipping_service
-  password: <%= ENV["ZAP_SHIPPING_SERVICE_DATABASE_PASSWORD"] %>
+  url: <%= ENV["DATABASE_URL"] %>
