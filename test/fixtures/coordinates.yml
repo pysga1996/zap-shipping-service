@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  x: 9.99
+  'y': 9.99
+  polygon_id: 1
+
+two:
+  x: 9.99
+  'y': 9.99
+  polygon_id: 1
