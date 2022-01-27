@@ -31,11 +31,11 @@ class UnitController < ActionController::API
       begin
         unit_lvl_1_id = create_unit data_hash, 1
         create_bbox(data_hash, unit_lvl_1_id)
-        create_polygons_coordinates(data_hash['coordinates'][0], unit_lvl_1_id)
+        create_polygons_coordinates(data_hash, unit_lvl_1_id)
         data_hash['level2s'].each { |data_hash_lvl_2|
           unit_lvl_2_id = create_unit(data_hash_lvl_2, 2, unit_lvl_1_id)
           create_bbox(data_hash_lvl_2, unit_lvl_2_id)
-          create_polygons_coordinates(data_hash_lvl_2['coordinates'][0], unit_lvl_2_id)
+          create_polygons_coordinates(data_hash_lvl_2, unit_lvl_2_id)
         }
       rescue Exception => e
         logger.error "Error process file #{json_file.original_filename}"
@@ -63,6 +63,9 @@ class UnitController < ActionController::API
   # @param data_hash [Hash]
   # @param unit_id [Integer]
   def create_bbox(data_hash, unit_id)
+    unless data_hash.has_key? 'bbox'
+      return
+    end
     attrs = {
       :x1 => data_hash['bbox'][0],
       :y1 => data_hash['bbox'][1],
@@ -74,48 +77,46 @@ class UnitController < ActionController::API
     new_bbox.save!
   end
 
-  # @param data_array [Array]
+  # @param data_hash [Hash]
   # @param unit_id [Integer]
-  def create_polygons_coordinates(data_array, unit_id)
-    polygon_arr = Array.new
-    # @type data_hash_polygon [Array]
-    data_array.each { |data_polygon|
-      attrs = {
-        :unit_id => unit_id
+  def create_polygons_coordinates(data_hash, unit_id)
+    unless data_hash.has_key?('coordinates')
+      return
+    end
+    unless data_hash['coordinate'].instance_of?(Array) && data_hash['coordinate'].length > 0
+      return
+    end
+    if data_hash['coordinates'][0].instance_of?(Array) && data_hash['coordinates'][0].length > 0
+      if data_hash['coordinates'][0][0].instance_of?(Array)
+        data_array = data_hash['coordinates'][0]
+      else
+        data_array = data_hash['coordinates']
+      end
+    else
+      return
+    end
+
+    polygon_attrs_arr = data_array.map { ||
+      {
+        :unit_id => unit_id,
+        :created_at => Time.new,
+        :updated_at => Time.new
       }
-      new_polygon = Polygon.new attrs
-      # new_polygon.save!
-      new_polygon.coordinate_list = data_polygon
-      polygon_arr.push(new_polygon)
-      # polygon_lvl_id = new_polygon.id
-      # coordinate_arr = Array.new
-      # @type data_coordinate [Array]
-      # data_polygon.each { |data_coordinate|
-      #   attrs = {
-      #     :x => data_coordinate[0],
-      #     :y => data_coordinate[1],
-      #     :polygon_id => polygon_lvl_id
-      #   }
-      #   new_coordinate = Coordinate.new attrs
-      #   coordinate_arr.push(new_coordinate)
-      #   # new_coordinate.save!
-      # }
-      # Coordinate.insert_all!(coordinate_arr)
     }
-    Polygon.insert_all!(polygon_arr)
-    # @type polygon [Polygon]
-    polygon_arr.each do |polygon|
-      coordinate_arr = Array.new
-      polygon.coordinate_list.each { |data_coordinate|
-        attrs = {
+    # @type polygon_result [ActiveRecord::Result]
+    polygon_results = Polygon.insert_all!(polygon_attrs_arr)
+    # @type polygon_result [Array]
+    polygon_results.rows.each_with_index do |polygon_result, index|
+      coordinate_attrs_arr = data_array[index].map { |data_coordinate|
+        {
           :x => data_coordinate[0],
           :y => data_coordinate[1],
-          :polygon_id => polygon.id
+          :polygon_id => polygon_result[0],
+          :created_at => Time.new,
+          :updated_at => Time.new
         }
-        new_coordinate = Coordinate.new attrs
-        coordinate_arr.push(new_coordinate)
       }
-      Coordinate.insert_all!(coordinate_arr)
+      Coordinate.insert_all!(coordinate_attrs_arr)
     end
   end
 

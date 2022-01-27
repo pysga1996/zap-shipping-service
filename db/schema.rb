@@ -13,6 +13,7 @@
 ActiveRecord::Schema.define(version: 2022_01_27_020337) do
 
   # These are extensions that must be enabled in order to support this database
+  enable_extension "adminpack"
   enable_extension "plpgsql"
 
   create_table "bboxes", force: :cascade do |t|
@@ -57,9 +58,9 @@ ActiveRecord::Schema.define(version: 2022_01_27_020337) do
     t.string "to_detail"
     t.text "notes"
     t.string "order_code", null: false
+    t.decimal "total_cost", default: "0.0", null: false
     t.decimal "price_cost", default: "0.0", null: false
     t.decimal "shipping_cost", default: "0.0", null: false
-    t.decimal "total_cost", default: "0.0", null: false
   end
 
   create_table "units", force: :cascade do |t|
