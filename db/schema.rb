@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_01_26_090227) do
+ActiveRecord::Schema.define(version: 2022_01_27_020337) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -57,9 +57,9 @@ ActiveRecord::Schema.define(version: 2022_01_26_090227) do
     t.string "to_detail"
     t.text "notes"
     t.string "order_code", null: false
-    t.decimal "total_cost", default: "0.0", null: false
     t.decimal "price_cost", default: "0.0", null: false
     t.decimal "shipping_cost", default: "0.0", null: false
+    t.decimal "total_cost", default: "0.0", null: false
   end
 
   create_table "units", force: :cascade do |t|
@@ -69,10 +69,13 @@ ActiveRecord::Schema.define(version: 2022_01_26_090227) do
     t.integer "level", null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.bigint "parent_id"
     t.index ["code"], name: "index_units_on_code", unique: true
+    t.index ["parent_id"], name: "index_units_on_parent_id"
   end
 
   add_foreign_key "bboxes", "units"
   add_foreign_key "coordinates", "polygons"
   add_foreign_key "polygons", "units"
+  add_foreign_key "units", "units", column: "parent_id"
 end
