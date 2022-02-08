@@ -9,7 +9,7 @@
     <RAILS_SERVER_CONFIG_SETTINGS_ID NAME="myPassParentEnvs" VALUE="true" />
     <EXTENSION ID="BundlerRunConfigurationExtension" bundleExecEnabled="false" />
     <EXTENSION ID="JRubyRunConfigurationExtension" NailgunExecEnabled="false" />
-    <EXTENSION ID="RubyCoverageRunConfigurationExtension" track_test_folders="true" runner="rcov" ENABLE_BRANCH_COVERAGE="true" ENABLE_FORKED_COVERAGE="true" />
+    <EXTENSION ID="RubyCoverageRunConfigurationExtension" track_test_folders="true" runner="rcov" IGNORE_RCOVRT="true" ENABLE_BRANCH_COVERAGE="true" ENABLE_FORKED_COVERAGE="true" />
     <EXTENSION ID="net.ashald.envfile">
       <option name="IS_ENABLED" value="true" />
       <option name="IS_SUBST" value="false" />
