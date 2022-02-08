@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>List of level 1 units</title>
+</head>
+<body>
+<h1>Import level 3 units:</h1>
+<%= form_with url: "/view/units/import/lvl/3", multipart: true do |form| %>
+  <%#= file_field_tag 'json_files[]', multiple: true %>
+  <%= file_field_tag 'json_file'%>
+  <%= form.submit 'Import' %>
+<% end %>
+<h1>List of level 1 units</h1>
+<% @units.each do |unit| %>
+  <%= link_to unit.name, "/view/units/lvl/#{unit.level + 1}?parent-id=#{unit.id}" %> <br>
+<% end %>
+</body>
+</html>
