@@ -23,6 +23,8 @@ Rails.application.routes.draw do
   post '/api/units/import', to: 'unit_rest#import'
 
   post '/api/test', to: 'shipment#read_data'
+
+  get "/view/error", to: 'home#error'
   # Almost every application defines a route for the root path ("/") at the top of this file.
   root "home#index"
 end

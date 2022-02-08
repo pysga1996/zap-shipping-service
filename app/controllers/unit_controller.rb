@@ -21,8 +21,15 @@ class UnitController < ApplicationController
   # @type json_file [ActionDispatch::Http::UploadedFile]
   def import_lvl_3
     json_file = request.params['json_file']
-    @units = UnitService.import_lvl_3(json_file)
-    render "unit/all"
+    begin
+      @units = UnitService.import_lvl_3(json_file)
+      render "unit/all"
+    rescue Exception => e
+      logger.error e
+      redirect_to "/view/error"
+    end
+
+
   end
 
 end
