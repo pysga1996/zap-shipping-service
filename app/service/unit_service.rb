@@ -1,5 +1,11 @@
+require 'action_controller'
+require 'logger'
+
 module UnitService
-  include ActionController
+
+  def self.logger
+    Rails.logger
+  end
 
   def self.get_lvl_1_units
     Unit.where(:level => 1)
@@ -72,46 +78,67 @@ module UnitService
   def self.import_lvl_3(json_file)
     # @type data_hash [Hash]
     data_hash = JSON.parse(json_file.read)
-    ActiveRecord::Base.transaction do
-      begin
-        data_hash['data'].each { |lvl_1_hash|
-          lvl_1_hash['level2s'].each { |lvl_2_hash|
-            arr_lvl_3 = []
-            parent_code = lvl_2_hash['level2_id']
-            parent = Unit.find_by!(:code => parent_code)
-            lvl_2_hash['level3s'].each { |lvl_3_hash|
-              code = lvl_3_hash['level3_id']
-              name = lvl_3_hash['name']
-              parent_id = parent.id
-              unit_lvl_3 = create_unit_lvl_3(code, name, parent_id)
-              arr_lvl_3.push(unit_lvl_3)
+    existed_lvl_3_unit_count = Unit.where(:level => 3).count
+    if existed_lvl_3_unit_count == 0
+      ActiveRecord::Base.transaction do
+        begin
+          data_hash['data'].each { |lvl_1_hash|
+            parent_lvl_1_code = lvl_1_hash['level1_id']
+            parent_lvl_1 = Unit.find_by(:code => parent_lvl_1_code)
+            if parent_lvl_1 == nil
+              attrs = {
+                :code => lvl_1_hash['level1_id'],
+                :name => lvl_1_hash['name'],
+                :level => 2
+              }
+              parent_lvl_1 = Unit.new attrs
+              parent_lvl_1.save!
+            end
+            lvl_1_hash['level2s'].each { |lvl_2_hash|
+              parent_lvl_2_code = lvl_2_hash['level2_id']
+              parent_lvl_2 = Unit.find_by(:code => parent_lvl_2_code)
+              if parent_lvl_2 == nil
+                attrs = {
+                  :code => lvl_2_hash['level2_id'],
+                  :name => lvl_2_hash['name'],
+                  :level => 2,
+                  :parent_id => parent_lvl_1.id
+                }
+                parent_lvl_2 = Unit.new attrs
+                parent_lvl_2.save!
+              end
+              # @type arr_lvl_3 [Array]
+              arr_lvl_3 = lvl_2_hash['level3s'].map { |lvl_3_hash|
+                code = lvl_3_hash['level3_id']
+                name = lvl_3_hash['name']
+                parent_id = parent_lvl_2.id
+                lvl_3_unit = {
+                  :code => code,
+                  :name => name,
+                  :level => 3,
+                  :parent_id => parent_id,
+                  :created_at => Time.now,
+                  :updated_at => Time.now
+                }
+                lvl_3_unit
+              }
+              unless arr_lvl_3.empty?
+                Unit.insert_all!(arr_lvl_3)
+              end
             }
-            Unit.insert_all!(arr_lvl_3)
           }
-        }
-      rescue Exception => e
-        logger.error "Error process file #{json_file.original_filename}"
-        raise e
+        rescue Exception => e
+          # logger.error "Error process file #{json_file.original_filename}"
+          logger.error e
+          raise e
+        end
       end
     end
     Unit.where(:level => 1)
   end
 
-  # @param code [String]
-  # @param name [String]
-  # @param parent_id [Integer]
-  # @return [Hash]
-  def create_unit_lvl_3(code, name, parent_id)
-    {
-      :code => code,
-      :name => name,
-      :level => 3,
-      :parent_id => parent_id
-    }
-  end
-
   # @param json_file [ActionDispatch::Http::UploadedFile]
-  def process_uploaded_file(json_file)
+  def self.process_uploaded_file(json_file)
     # @type data_hash [Hash]
     data_hash = JSON.parse(json_file.read)
     ActiveRecord::Base.transaction do
@@ -135,7 +162,7 @@ module UnitService
   # @param level [Integer]
   # @param parent_id [Integer]
   # @return [Integer]
-  def create_unit(data_hash, level, parent_id = nil)
+  def self.create_unit(data_hash, level, parent_id = nil)
     attrs = {
       :code => data_hash["level#{level}_id"],
       :name => data_hash['name'],
@@ -149,7 +176,7 @@ module UnitService
 
   # @param data_hash [Hash]
   # @param unit_id [Integer]
-  def create_bbox(data_hash, unit_id)
+  def self.create_bbox(data_hash, unit_id)
     unless data_hash.has_key? 'bbox'
       return
     end
@@ -166,7 +193,7 @@ module UnitService
 
   # @param data_hash [Hash]
   # @param unit_id [Integer]
-  def create_polygons_coordinates(data_hash, unit_id)
+  def self.create_polygons_coordinates(data_hash, unit_id)
     unless data_hash.has_key?('coordinates')
       return
     end
@@ -186,8 +213,8 @@ module UnitService
     polygon_attrs_arr = data_array.map { ||
       {
         :unit_id => unit_id,
-        :created_at => Time.new,
-        :updated_at => Time.new
+        :created_at => Time.now,
+        :updated_at => Time.now
       }
     }
     # @type polygon_result [ActiveRecord::Result]
@@ -199,8 +226,8 @@ module UnitService
           :x => data_coordinate[0],
           :y => data_coordinate[1],
           :polygon_id => polygon_result[0],
-          :created_at => Time.new,
-          :updated_at => Time.new
+          :created_at => Time.now,
+          :updated_at => Time.now
         }
       }
       Coordinate.insert_all!(coordinate_attrs_arr)

@@ -28,8 +28,6 @@ class UnitController < ApplicationController
       logger.error e
       redirect_to "/view/error"
     end
-
-
   end
 
 end
