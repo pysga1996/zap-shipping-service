@@ -6,6 +6,6 @@ class PaginationInfo
     @page = page
     @size = size
     @total_elements = total
-    @total_pages = (total / size).ceil
+    @total_pages = (total.fdiv(size)).ceil
   end
 end

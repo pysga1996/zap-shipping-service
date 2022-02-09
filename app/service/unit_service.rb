@@ -43,16 +43,19 @@ module UnitService
     end
 
     if params.has_key?('page')
-      page = params['page']
+      page = Integer(params['page'])
     end
 
     if params.has_key?('size')
-      size = params['size']
+      size = Integer(params['size'])
       if size > 100
         size = 100
       end
     end
-    render json: rs.order(created_at: :desc).limit(size).offset(page * 10)
+    data = rs.order(created_at: :desc).limit(size).offset(page * 10)
+    total = data.except(:offset, :limit, :order).count
+    rs_page = PaginationInfo.new data, page, size, total
+    rs_page
   end
 
   # @param multipart_files [Array<UploadedFile>]
