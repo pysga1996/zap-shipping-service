@@ -1,6 +1,5 @@
 class UnitRestController < ActionController::API
   include ActionDispatch::Http
-  include UnitService
 
   def get_lvl_1_units
     render json: UnitService.get_lvl_1_units

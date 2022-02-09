@@ -3,13 +3,13 @@ class UnitController < ApplicationController
 
   def get_lvl_1_units
     @units = UnitService.get_lvl_1_units
-    render "unit/all"
+    render template: "unit/all", layout: "main"
   end
 
   def get_lvl_2_units
     parent_id = params['parent-id']
     @units = UnitService.get_lvl_2_units(parent_id)
-    render "unit/all"
+    render template: "unit/all"
   end
 
   def get_lvl_3_units
