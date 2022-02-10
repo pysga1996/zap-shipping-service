@@ -1,0 +1,8 @@
+<% content_for :main do %>
+  <h1>Import level 3 units:</h1>
+  <%= form_with url: "/view/units/import/lvl/3", multipart: true do |form| %>
+    <%= file_field_tag 'json_files[]', multiple: true %>
+    <%= file_field_tag 'json_file' %>
+    <%= form.submit 'Import' %>
+  <% end %>
+<% end %>
