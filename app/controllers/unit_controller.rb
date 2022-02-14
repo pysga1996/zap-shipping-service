@@ -1,21 +1,22 @@
 class UnitController < ApplicationController
   include UnitService
 
-  def get_lvl_1_units
+  def get_all_root_units
     @units = UnitService.get_lvl_1_units
     render template: "unit/all", layout: "main"
   end
 
-  def get_lvl_2_units
-    parent_id = params['parent-id']
-    @units = UnitService.get_lvl_2_units(parent_id)
-    render template: "unit/all"
-  end
-
-  def get_lvl_3_units
-    parent_id = params['parent-id']
-    @units = UnitService.get_lvl_3_units(parent_id)
-    render "unit/all"
+  def get_unit_detail
+    id = params['id']
+    @unit_detail = UnitService.get_unit_by_id(id)
+    if @unit_detail.level == 1
+      @units = UnitService.get_lvl_2_units(id)
+    elsif @unit_detail.level == 2
+      @units = UnitService.get_lvl_3_units(id)
+    else
+      @units = []
+    end
+    render template: "unit/detail", layout: "main"
   end
 
   # @type json_file [ActionDispatch::Http::UploadedFile]
