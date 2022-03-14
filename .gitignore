@@ -26,3 +26,6 @@
 /config/master.key
 /environment/
 /.idea/*
+
+# Ignore deploy folder
+/deploy/*

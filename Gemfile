@@ -34,10 +34,14 @@ gem "tzinfo-data", platforms: %i[ mingw mswin x64_mingw jruby ]
 
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin AJAX possible
 # gem "rack-cors"
+#
+gem 'ruby-debug-ide', '~> 0.7.2'
+gem 'debase-ruby_core_source', '~> 0.10.14'
+gem 'debase', '~> 0.2.4.1'
 
 group :development, :test do
   # Start debugger with binding.b [https://github.com/ruby/debug]
-  gem "debug", ">= 1.0.0", platforms: %i[ mri mingw x64_mingw ]
+  # gem "debug", ">= 1.0.0", platforms: %i[ mri mingw x64_mingw ]
 end
 
 group :development do
