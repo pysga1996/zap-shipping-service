@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_01_27_020337) do
+ActiveRecord::Schema.define(version: 2022_03_31_072855) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "adminpack"
@@ -73,6 +73,15 @@ ActiveRecord::Schema.define(version: 2022_01_27_020337) do
     t.bigint "parent_id"
     t.index ["code"], name: "index_units_on_code", unique: true
     t.index ["parent_id"], name: "index_units_on_parent_id"
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.string "name"
+    t.string "email"
+    t.integer "status"
+    t.integer "type"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
   end
 
   add_foreign_key "bboxes", "units"

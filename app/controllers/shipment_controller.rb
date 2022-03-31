@@ -1,8 +1,7 @@
-class Fucker
-  attr_accessor :name, :age
-end
+class ShipmentController < SecuredApiBaseController
 
-class ShipmentController < ActionController::API
+  before_action :authenticate, only: [:index]
+
   def index
     attr = {
       :id => "4",
@@ -11,6 +10,7 @@ class ShipmentController < ActionController::API
       :to => "HCM"
     }
     s1 = Shipment.new attr
+    logger.debug @current_user.email
     render json: s1
   end
 
