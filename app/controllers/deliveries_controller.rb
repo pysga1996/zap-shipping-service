@@ -1,15 +1,15 @@
-class ShipmentController < SecuredApiBaseController
+class DeliveriesController < SecuredApiBaseController
 
   before_action :authenticate, only: [:index]
 
   def index
     attr = {
       :id => "4",
-      :code => "lozz",
-      :from => "HN",
-      :to => "HCM"
+      :partner_code => "GHTK",
+      :from_lvl_3_code => "HN",
+      :to_lvl_3_code => "HCM"
     }
-    s1 = Shipment.new attr
+    s1 = Delivery.new attr
     logger.debug @current_user.email
     render json: s1
   end
