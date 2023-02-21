@@ -1,0 +1,3 @@
+1. calculate center of bbox
+2. calculate center of polygon(s)
+3. find out which polygon center near the bbox center most

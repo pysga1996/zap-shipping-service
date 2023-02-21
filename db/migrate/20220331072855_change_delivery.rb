@@ -51,8 +51,10 @@ class ChangeDelivery < ActiveRecord::Migration[7.0]
 
     create_table :unit, force: :cascade, id: :string, primary_key: :code do |t|
       t.string :name, null: false
+      t.string :type, null: false
       t.string :description
       t.integer :level, null: false
+      t.decimal :area
       t.string :parent_code
       t.foreign_key :unit, column: :parent_code, primary_key: :code
       t.index :parent_code
@@ -68,19 +70,20 @@ class ChangeDelivery < ActiveRecord::Migration[7.0]
     end
 
     create_table :bbox, force: :cascade, id: :string do |t|
-      t.decimal :x1, default: 0
-      t.decimal :y1, default: 0
-      t.decimal :x2, default: 0
-      t.decimal :y2, default: 0
-      t.string :polygon_id, null: false
-      t.foreign_key :unit, column: :polygon_id, primary_key: :id
-      t.index :polygon_id
+      t.decimal :min_longitude, default: 0
+      t.decimal :min_latitude, default: 0
+      t.decimal :max_longitude, default: 0
+      t.decimal :max_latitude, default: 0
+      t.string :unit_code, null: false
+      t.foreign_key :unit, column: :unit_code, primary_key: :code
+      t.index :unit_code
       t.timestamps
     end
 
     create_table :coordinate, force: :cascade, id: :string do |t|
-      t.decimal :x
-      t.decimal :y
+      t.decimal :longitude
+      t.decimal :latitude
+      t.decimal :ord
       t.string :polygon_id, null: false
       t.foreign_key :polygon, column: :polygon_id, primary_key: :id
       t.index :polygon_id

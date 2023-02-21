@@ -92,6 +92,7 @@ module UnitService
               attrs = {
                 :code => lvl_1_hash['level1_id'],
                 :name => lvl_1_hash['name'],
+                :type => lvl_1_hash['type'],
                 :level => 2
               }
               parent_lvl_1 = Unit.new attrs
@@ -184,10 +185,10 @@ module UnitService
       return
     end
     attrs = {
-      :x1 => data_hash['bbox'][0],
-      :y1 => data_hash['bbox'][1],
-      :x2 => data_hash['bbox'][2],
-      :y2 => data_hash['bbox'][3],
+      :min_longitude => data_hash['bbox'][0],
+      :min_latitude => data_hash['bbox'][1],
+      :max_longitude => data_hash['bbox'][2],
+      :max_latitude => data_hash['bbox'][3],
       :unit_id => unit_id
     }
     new_bbox = Bbox.new attrs
@@ -200,15 +201,10 @@ module UnitService
     unless data_hash.has_key?('coordinates')
       return
     end
-    unless data_hash['coordinate'].instance_of?(Array) && data_hash['coordinate'].length > 0
-      return
-    end
-    if data_hash['coordinates'][0].instance_of?(Array) && data_hash['coordinates'][0].length > 0
-      if data_hash['coordinates'][0][0].instance_of?(Array)
-        data_array = data_hash['coordinates'][0]
-      else
-        data_array = data_hash['coordinates']
-      end
+    if data_hash['type'] == 'Polygon'
+      data_array = data_hash['coordinates']
+    elsif data_hash['type'] == 'MultiPolygon'
+      data_array = data_hash['coordinates'][0]
     else
       return
     end
@@ -226,14 +222,18 @@ module UnitService
     polygon_results.rows.each_with_index do |polygon_result, index|
       coordinate_attrs_arr = data_array[index].map { |data_coordinate|
         {
-          :x => data_coordinate[0],
-          :y => data_coordinate[1],
+          :longitude => data_coordinate[0],
+          :latitude => data_coordinate[1],
+          :ord => index,
           :polygon_id => polygon_result[0],
           :created_at => Time.now,
           :updated_at => Time.now
         }
       }
-      Coordinate.insert_all!(coordinate_attrs_arr)
+      # TODO
+      coordinate_results = Coordinate.insert_all!(coordinate_attrs_arr, returning: %w[ longitude latitude ])
+      area = 0
+      Polygon.update(id = polygon_result[0], area: area)
     end
   end
 
