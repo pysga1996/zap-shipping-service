@@ -94,7 +94,7 @@ module UnitService
             parent_lvl_2.save!
             # @type arr_lvl_3 [Array]
             arr_lvl_3 = lvl_2_hash['level3s'].map { |lvl_3_hash|
-              attrs = create_unit_attrs(lvl_1_hash, 3, parent_lvl_2.id)
+              attrs = create_unit_attrs(lvl_3_hash, 3, parent_lvl_2.id)
               attrs
             }
             unless arr_lvl_3.empty?
@@ -141,8 +141,10 @@ module UnitService
       :id => data_hash["level#{level}_id"],
       :name => data_hash['name'],
       :type => data_hash['type'],
-      :level => 3,
-      :parent_id => parent_id
+      :level => level,
+      :parent_id => parent_id,
+      :created_at => Time.now,
+      :updated_at => Time.now
     }
     attrs
   end
@@ -165,21 +167,26 @@ module UnitService
   end
 
   def self.degree_to_radiant(input)
-    input * Math.PI / 180
+    input * Math::PI / 180
   end
+
+  EARTH_RADIUS_IN_KM = 6378.137
 
   # @param [Array<Array<Numeric>>] points
   def self.calculate_polygon_area(points)
     # Initialize area
     area = 0
     # Calculate value of shoelace formula
+    unless points.length > 2
+      area
+    end
     j = points.length - 1
     (0..(points.length - 1)).each { |i|
-      area += (2 + Math.sin(degree_to_radiant(points[j]["latitude"])) + Math.sin(degree_to_radiant(points[i]["latitude"])) *
-        degree_to_radiant(points[j]["longitude"] - points[i]["longitude"]))
+      area += (2 + Math.sin(degree_to_radiant(points[j]["latitude"])) + Math.sin(degree_to_radiant(points[i]["latitude"]))) * degree_to_radiant(points[j]["longitude"] - points[i]["longitude"])
       j = i; # j is previous vertex to i
     }
-    (area / 2).abs
+    area = area * EARTH_RADIUS_IN_KM * EARTH_RADIUS_IN_KM / 2
+    area.abs
   end
 
   # @param data_hash [Hash]
@@ -188,43 +195,42 @@ module UnitService
     unless data_hash.has_key?('coordinates')
       return
     end
-    if data_hash['type'] == 'Polygon'
-      data_array = data_hash['coordinates']
-    elsif data_hash['type'] == 'MultiPolygon'
-      data_array = data_hash['coordinates'][0]
-    else
-      return
-    end
-
-    polygon_attrs_arr = data_array.map { ||
-      {
-        :id => ULID.generate,
+    # if data_hash['type'] == 'Polygon'
+    #   data_array = data_hash['coordinates']
+    # elsif data_hash['type'] == 'MultiPolygon'
+    #   data_array = data_hash['coordinates'][0]
+    # else
+    #   return
+    # end
+    polygon_array = data_hash['coordinates']
+    polygon_array.each_with_index { |polygon_data, index|
+      attrs = {
         :unit_id => unit_id,
-        :created_at => Time.now,
-        :updated_at => Time.now
       }
-    }
-    # @type polygon_result [ActiveRecord::Result]
-    polygon_results = Polygon.insert_all!(polygon_attrs_arr)
-    # @type polygon_result [Array]
-    polygon_results.rows.each_with_index do |polygon_result, index|
-
-      coordinate_attrs_arr = data_array[index].each_with_index.map { |data_coordinate, point_idx|
-
+      polygon = Polygon.new(attrs)
+      polygon.save!
+      if data_hash['type'] == 'Polygon'
+        coordinate_array = polygon_data
+      elsif data_hash['type'] == 'MultiPolygon'
+        coordinate_array = polygon_data[0]
+      else
+        return
+      end
+      coordinate_attrs_arr = coordinate_array.each_with_index.map { |data_coordinate, point_idx|
         {
           :id => ULID.generate,
           :longitude => data_coordinate[0],
           :latitude => data_coordinate[1],
           :ord => point_idx,
-          :polygon_id => polygon_result[0],
+          :polygon_id => polygon.id,
           :created_at => Time.now,
           :updated_at => Time.now
         }
       }
       coordinate_results = Coordinate.insert_all!(coordinate_attrs_arr, returning: %w[ longitude latitude ])
       area = calculate_polygon_area(coordinate_results)
-      Polygon.update(id = polygon_result[0], area: area)
-    end
+      Polygon.update(id = polygon.id, area: area)
+    }
   end
 
 end
