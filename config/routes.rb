@@ -1,16 +1,12 @@
+$base_path = '/revice-commerce/zap-delivery'
+
 Rails.application.routes.draw do
 
-  scope(:path => '/revice-commerce/zap-delivery') do
+  scope(:path => $base_path) do
     # For details on the DSL available within this file, see https://guides.rubyonrails.org/routing.html
-    get '/api/delivery', to: 'delivery_rest#index'
-
     post '/api/test', to: 'delivery_rest#read_data'
 
-    get '/view/units', to: 'unit#get_all_root_units'
-
-    get '/view/units/:id', to: 'unit#get_unit_detail'
-
-    post '/view/units/import/lvl/3', to: 'unit#import_lvl_3'
+    get '/api/deliveries', to: 'delivery_rest#index'
 
     get '/api/units/lvl/1', to: 'unit_rest#get_lvl_1_units'
 
@@ -23,6 +19,12 @@ Rails.application.routes.draw do
     get '/api/units-by-conditions', to: 'unit_rest#get_units_by_conditions'
 
     post '/api/units/import', to: 'unit_rest#import'
+
+    get '/view/units', to: 'unit#get_all_root_units'
+
+    get '/view/units/:id', to: 'unit#get_unit_detail'
+
+    post '/view/units/import', to: 'unit#import'
 
     get "/view/error", to: 'home#error'
   end

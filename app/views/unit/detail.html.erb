@@ -87,7 +87,7 @@
   <div class="b-example-divider"></div>
   <div class="container">
     <div class="text-center">
-      <%= link_to "/view/units/#{@unit_detail.parent_id}" do %>
+      <%= link_to "#{$base_path}/view/units/#{@unit_detail.parent_id}" do %>
         <h4><%= @unit_detail.name %></h4>
       <% end %>
       <p class="mb-0 opacity-75"><%= @unit_detail.description %></p>
@@ -96,7 +96,7 @@
     <div class="list-group">
       <% @units.each do |unit| %>
         <%#= link_to :controller => "unit", :action => 'get_lvl_1_units', 'parent-id' => unit.id do %>
-        <%= link_to "/view/units/#{unit.id}", class: "list-group-item list-group-item-action d-flex gap-3 py-3" do %>
+        <%= link_to "#{$base_path}/view/units/#{unit.id}", class: "list-group-item list-group-item-action d-flex gap-3 py-3" do %>
           <img src="https://github.com/twbs.png" alt="twbs" width="32" height="32" class="rounded-circle flex-shrink-0">
           <div class="d-flex gap-2 w-100 justify-content-between">
             <div>

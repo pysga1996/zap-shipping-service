@@ -1,5 +1,6 @@
 require 'action_controller'
 require 'logger'
+require 'ulid'
 
 module UnitService
 
@@ -59,7 +60,7 @@ module UnitService
   end
 
   # @param multipart_files [Array<UploadedFile>]
-  def self.import(multipart_files)
+  def self.import_coordinates(multipart_files)
     if multipart_files.present?
       begin
         multipart_files.each do |multipart_file|
@@ -78,64 +79,33 @@ module UnitService
   end
 
   # @param json_file [ActionDispatch::Http::UploadedFile]
-  def self.import_lvl_3(json_file)
+  def self.import(json_file)
     # @type data_hash [Hash]
     data_hash = JSON.parse(json_file.read)
-    existed_lvl_3_unit_count = Unit.where(:level => 3).count
-    if existed_lvl_3_unit_count == 0
-      ActiveRecord::Base.transaction do
-        begin
-          data_hash['data'].each { |lvl_1_hash|
-            parent_lvl_1_code = lvl_1_hash['level1_id']
-            parent_lvl_1 = Unit.find_by(:code => parent_lvl_1_code)
-            if parent_lvl_1 == nil
-              attrs = {
-                :code => lvl_1_hash['level1_id'],
-                :name => lvl_1_hash['name'],
-                :type => lvl_1_hash['type'],
-                :level => 2
-              }
-              parent_lvl_1 = Unit.new attrs
-              parent_lvl_1.save!
-            end
-            lvl_1_hash['level2s'].each { |lvl_2_hash|
-              parent_lvl_2_code = lvl_2_hash['level2_id']
-              parent_lvl_2 = Unit.find_by(:code => parent_lvl_2_code)
-              if parent_lvl_2 == nil
-                attrs = {
-                  :code => lvl_2_hash['level2_id'],
-                  :name => lvl_2_hash['name'],
-                  :level => 2,
-                  :parent_id => parent_lvl_1.id
-                }
-                parent_lvl_2 = Unit.new attrs
-                parent_lvl_2.save!
-              end
-              # @type arr_lvl_3 [Array]
-              arr_lvl_3 = lvl_2_hash['level3s'].map { |lvl_3_hash|
-                code = lvl_3_hash['level3_id']
-                name = lvl_3_hash['name']
-                parent_id = parent_lvl_2.id
-                lvl_3_unit = {
-                  :code => code,
-                  :name => name,
-                  :level => 3,
-                  :parent_id => parent_id,
-                  :created_at => Time.now,
-                  :updated_at => Time.now
-                }
-                lvl_3_unit
-              }
-              unless arr_lvl_3.empty?
-                Unit.insert_all!(arr_lvl_3)
-              end
+    ActiveRecord::Base.transaction do
+      begin
+        data_hash['data'].each { |lvl_1_hash|
+          attrs = create_unit_attrs(lvl_1_hash, 1)
+          parent_lvl_1 = Unit.new attrs
+          parent_lvl_1.save!
+          lvl_1_hash['level2s'].each { |lvl_2_hash|
+            attrs = create_unit_attrs(lvl_2_hash, 2, parent_lvl_1.id)
+            parent_lvl_2 = Unit.new attrs
+            parent_lvl_2.save!
+            # @type arr_lvl_3 [Array]
+            arr_lvl_3 = lvl_2_hash['level3s'].map { |lvl_3_hash|
+              attrs = create_unit_attrs(lvl_1_hash, 3, parent_lvl_2.id)
+              attrs
             }
+            unless arr_lvl_3.empty?
+              Unit.insert_all!(arr_lvl_3)
+            end
           }
-        rescue Exception => e
-          # logger.error "Error process file #{json_file.original_filename}"
-          logger.error e
-          raise e
-        end
+        }
+      rescue Exception => e
+        # logger.error "Error process file #{json_file.original_filename}"
+        logger.error e
+        raise e
       end
     end
     Unit.where(:level => 1)
@@ -144,14 +114,14 @@ module UnitService
   # @param json_file [ActionDispatch::Http::UploadedFile]
   def self.process_uploaded_file(json_file)
     # @type data_hash [Hash]
-    data_hash = JSON.parse(json_file.read)
+    data_hash_lvl_1 = JSON.parse(json_file.read)
     ActiveRecord::Base.transaction do
       begin
-        unit_lvl_1_id = create_unit(data_hash, 1)
-        create_bbox(data_hash, unit_lvl_1_id)
-        create_polygons_coordinates(data_hash, unit_lvl_1_id)
-        data_hash['level2s'].each { |data_hash_lvl_2|
-          unit_lvl_2_id = create_unit(data_hash_lvl_2, 2, unit_lvl_1_id)
+        unit_lvl_1_id = data_hash_lvl_1["level1_id"]
+        create_bbox(data_hash_lvl_1, unit_lvl_1_id)
+        create_polygons_coordinates(data_hash_lvl_1, unit_lvl_1_id)
+        data_hash_lvl_1['level2s'].each { |data_hash_lvl_2|
+          unit_lvl_2_id = data_hash_lvl_2["level2_id"]
           create_bbox(data_hash_lvl_2, unit_lvl_2_id)
           create_polygons_coordinates(data_hash_lvl_2, unit_lvl_2_id)
         }
@@ -165,17 +135,16 @@ module UnitService
   # @param data_hash [Hash]
   # @param level [Integer]
   # @param parent_id [Integer]
-  # @return [Integer]
-  def self.create_unit(data_hash, level, parent_id = nil)
+  # @return data_hash [Hash]
+  def self.create_unit_attrs(data_hash, level, parent_id = nil)
     attrs = {
-      :code => data_hash["level#{level}_id"],
+      :id => data_hash["level#{level}_id"],
       :name => data_hash['name'],
-      :level => level,
+      :type => data_hash['type'],
+      :level => 3,
       :parent_id => parent_id
     }
-    new_unit = Unit.new attrs
-    new_unit.save!
-    new_unit.id
+    attrs
   end
 
   # @param data_hash [Hash]
@@ -195,6 +164,24 @@ module UnitService
     new_bbox.save!
   end
 
+  def self.degree_to_radiant(input)
+    input * Math.PI / 180
+  end
+
+  # @param [Array<Array<Numeric>>] points
+  def self.calculate_polygon_area(points)
+    # Initialize area
+    area = 0
+    # Calculate value of shoelace formula
+    j = points.length - 1
+    (0..(points.length - 1)).each { |i|
+      area += (2 + Math.sin(degree_to_radiant(points[j]["latitude"])) + Math.sin(degree_to_radiant(points[i]["latitude"])) *
+        degree_to_radiant(points[j]["longitude"] - points[i]["longitude"]))
+      j = i; # j is previous vertex to i
+    }
+    (area / 2).abs
+  end
+
   # @param data_hash [Hash]
   # @param unit_id [Integer]
   def self.create_polygons_coordinates(data_hash, unit_id)
@@ -211,6 +198,7 @@ module UnitService
 
     polygon_attrs_arr = data_array.map { ||
       {
+        :id => ULID.generate,
         :unit_id => unit_id,
         :created_at => Time.now,
         :updated_at => Time.now
@@ -220,19 +208,21 @@ module UnitService
     polygon_results = Polygon.insert_all!(polygon_attrs_arr)
     # @type polygon_result [Array]
     polygon_results.rows.each_with_index do |polygon_result, index|
-      coordinate_attrs_arr = data_array[index].map { |data_coordinate|
+
+      coordinate_attrs_arr = data_array[index].each_with_index.map { |data_coordinate, point_idx|
+
         {
+          :id => ULID.generate,
           :longitude => data_coordinate[0],
           :latitude => data_coordinate[1],
-          :ord => index,
+          :ord => point_idx,
           :polygon_id => polygon_result[0],
           :created_at => Time.now,
           :updated_at => Time.now
         }
       }
-      # TODO
       coordinate_results = Coordinate.insert_all!(coordinate_attrs_arr, returning: %w[ longitude latitude ])
-      area = 0
+      area = calculate_polygon_area(coordinate_results)
       Polygon.update(id = polygon_result[0], area: area)
     end
   end

@@ -4,5 +4,6 @@ class HomeController < ActionController::Base
   end
 
   def error
+    render template: "home/error", layout: "main"
   end
 end

@@ -39,6 +39,7 @@ gem 'ruby-debug-ide', '~> 0.7.2'
 gem 'debase-ruby_core_source', '~> 0.10.14'
 gem 'debase', '~> 0.2.4.1'
 gem 'jwt'
+gem 'ulid-ruby', require: 'ulid'
 
 group :development, :test do
   # Start debugger with binding.b [https://github.com/ruby/debug]

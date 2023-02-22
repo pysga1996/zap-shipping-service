@@ -5,6 +5,15 @@
     <title>Error</title>
 </head>
 <body>
-Error occurred!!!
+
 </body>
 </html>
+<% content_for :main do %>
+  <div class="container">
+    <p class="text-center text-danger">
+      Error occurred!!!<br>
+      <%= flash[:message] %>
+    </p>
+  </div>
+
+<% end %>

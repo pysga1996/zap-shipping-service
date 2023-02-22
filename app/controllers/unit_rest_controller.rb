@@ -29,11 +29,11 @@ class UnitRestController < ActionController::API
     # @type multipart_files [Array<UploadedFile>]
     multipart_files = request.params['json_files']
     begin
-      UnitService.import(multipart_files)
+      UnitService.import_coordinates(multipart_files)
       return render status: :ok
     rescue Exception => e
       logger.error e
-      return render status: :internal_server_error
+      return render status: :internal_server_error, json: { message: e.message }
     end
   end
 

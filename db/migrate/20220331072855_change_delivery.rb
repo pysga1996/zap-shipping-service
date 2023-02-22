@@ -49,40 +49,40 @@ class ChangeDelivery < ActiveRecord::Migration[7.0]
       t.index :partner_code
     end
 
-    create_table :unit, force: :cascade, id: :string, primary_key: :code do |t|
+    create_table :unit, force: :cascade, id: :string do |t|
       t.string :name, null: false
       t.string :type, null: false
       t.string :description
       t.integer :level, null: false
       t.decimal :area
-      t.string :parent_code
-      t.foreign_key :unit, column: :parent_code, primary_key: :code
-      t.index :parent_code
+      t.string :parent_id
+      t.foreign_key :unit, column: :parent_id, primary_key: :id
+      t.index :parent_id
       t.timestamps
     end
 
     create_table :polygon, force: :cascade, id: :string do |t|
       t.decimal :area, default: 0
-      t.string :unit_code, null: false
-      t.foreign_key :unit, column: :unit_code, primary_key: :code
-      t.index :unit_code
+      t.string :unit_id, null: false
+      t.foreign_key :unit, column: :unit_id, primary_key: :id
+      t.index :unit_id
       t.timestamps
     end
 
     create_table :bbox, force: :cascade, id: :string do |t|
-      t.decimal :min_longitude, default: 0
-      t.decimal :min_latitude, default: 0
-      t.decimal :max_longitude, default: 0
-      t.decimal :max_latitude, default: 0
-      t.string :unit_code, null: false
-      t.foreign_key :unit, column: :unit_code, primary_key: :code
-      t.index :unit_code
+      t.decimal :min_longitude, null: false, default: 0
+      t.decimal :min_latitude, null: false, default: 0
+      t.decimal :max_longitude, null: false, default: 0
+      t.decimal :max_latitude, null: false, default: 0
+      t.string :unit_id, null: false
+      t.foreign_key :unit, column: :unit_id, primary_key: :id
+      t.index :unit_id
       t.timestamps
     end
 
     create_table :coordinate, force: :cascade, id: :string do |t|
-      t.decimal :longitude
-      t.decimal :latitude
+      t.decimal :longitude, null: false, default: 0
+      t.decimal :latitude, null: false, default: 0
       t.decimal :ord
       t.string :polygon_id, null: false
       t.foreign_key :polygon, column: :polygon_id, primary_key: :id
@@ -97,10 +97,19 @@ class ChangeDelivery < ActiveRecord::Migration[7.0]
       t.timestamps
     end
 
+    create_table :fee_config, force: :cascade, id: :string, primary_key: :code do |t|
+      t.string :type
+      t.decimal :value
+      t.decimal :upper_bound
+      t.decimal :lower_bound
+      t.string :bound_unit
+      t.integer :status
+      t.timestamps
+    end
+
   end
 
   def down
-
     drop_table :delivery_detail
     drop_table :delivery
     drop_table :partner_policy
@@ -110,5 +119,6 @@ class ChangeDelivery < ActiveRecord::Migration[7.0]
     drop_table :polygon
     drop_table :unit
     drop_table :user
+    drop_table :fee_config
   end
 end
